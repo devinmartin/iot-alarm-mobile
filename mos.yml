@@ -1,0 +1,20 @@
+author: Devin Martin
+description: An mobile IoT alarm that can be remotely controlled
+# arch: PLATFORM
+version: 1.0
+manifest_version: 2017-05-18
+libs_version: ${mos.version}
+modules_version: ${mos.version}
+mongoose_os_version: ${mos.version}
+
+config_schema:
+  - ["i2c.enable", false]
+
+tags:
+  - js
+
+filesystem:
+  - fs
+
+libs:
+  - origin: https://github.com/mongoose-os-libs/js-demo-bundle
