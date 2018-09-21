@@ -8,12 +8,14 @@ load('api_timer.js');
 load('api_shadow.js');
 load('api_rpc.js');
 load('api_file.js');
+load('api_pwm.js');
 
-let buzzerPin = 0; //Cfg.get('pins.buzzer');
+let buzzerPin = 14; //Cfg.get('pins.buzzer');
 let state = {buzzer: false, sleep: false, schedule: true};
 
 
 GPIO.set_mode(buzzerPin, GPIO.MODE_OUTPUT);
+GPIO.write(buzzerPin, 0);
 print('Alarm GPIO:', buzzerPin);
 
 // init after 20 seconds
@@ -48,18 +50,22 @@ Timer.set(5000, Timer.REPEAT, function() {
 }, null);
 
 // chirp buzzer if alarm is set
+
 Timer.set(1000 /* 1 sec */, Timer.REPEAT, function() {
   if (state.buzzer){
     print('chirping:');
-    GPIO.write(buzzerPin, 1);
+    PWM.set(buzzerPin, 2700, 0.5)
+    GPIO.write(buzzerPin, 0);
     Timer.set(200 /* 1 sec */, 0, function() {
-      GPIO.write(buzzerPin, 0);
+      PWM.set(buzzerPin, 0, 0)
     }, null);
   }
   else {
+    //PWM.set(buzzerPin, 0, 0)
     GPIO.write(buzzerPin, 0);
   }
 }, null);
+
 
 // Set up Shadow handler to synchronise device state with the shadow state
 Shadow.addHandler(function(event, obj) {
