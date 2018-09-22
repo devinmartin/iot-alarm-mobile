@@ -1,5 +1,6 @@
 load('api_config.js');
 load('api_events.js');
+load('api_adc.js');
 load('api_gpio.js');
 load('api_mqtt.js');
 load('api_net.js');
@@ -11,7 +12,12 @@ load('api_file.js');
 load('api_pwm.js');
 
 let buzzerPin = 14; //Cfg.get('pins.buzzer');
-let state = {buzzer: false, sleep: false, schedule: true};
+let state = {buzzer: false, sleep: false, schedule: true, voltage:0.1};
+
+let raw = ADC.read(0);
+let volt=(raw/1023.0) * 4.5;
+print('voltage is', volt);
+state.voltage = volt;
 
 
 GPIO.set_mode(buzzerPin, GPIO.MODE_OUTPUT);
@@ -27,7 +33,7 @@ Timer.set(5000, Timer.REPEAT, function() {
     for(let i = 0; i<schedule.times.length; i++){
       let pred = schedule.times[i];
       if (pred > schedule.last && Timer.now() >= pred) {
-        print('schedule hit')
+        print('schedule hit');
         schedule.last = Timer.now();
         File.write(JSON.stringify(schedule), 'schedule.json');
         state.buzzer = true;
@@ -35,33 +41,30 @@ Timer.set(5000, Timer.REPEAT, function() {
       }
     }
   }
-  
-  if (!state.buzzer && false) {
-    // check the time
-    // deep sleep for a minute
-    if (state.sleep) {
-      print('sleping');
-      //Sys.usleep(30000000);
-    }
-    else{
-      print('Not sleeping');
-    }
-  }
+}, null);
+
+// check battery
+Timer.set(300000, Timer.REPEAT, function(){
+  let raw = ADC.read(0);
+  let volt=(raw/1023.0) * 4.5;
+  print('voltage is', volt);
+  stage.voltage = volt;
+  Shadow.update(0, state);
 }, null);
 
 // chirp buzzer if alarm is set
-
 Timer.set(1000 /* 1 sec */, Timer.REPEAT, function() {
   if (state.buzzer){
     print('chirping:');
-    PWM.set(buzzerPin, 2700, 0.5)
+    PWM.set(buzzerPin, 2700, 0.5);
     GPIO.write(buzzerPin, 0);
     Timer.set(200 /* 1 sec */, 0, function() {
-      PWM.set(buzzerPin, 0, 0)
+      PWM.set(buzzerPin, 0, 0);
+      GPIO.write(buzzerPin, 0);
     }, null);
   }
   else {
-    //PWM.set(buzzerPin, 0, 0)
+    PWM.set(buzzerPin, 0, 0)
     GPIO.write(buzzerPin, 0);
   }
 }, null);
